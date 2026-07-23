@@ -1,11 +1,13 @@
 {
   "name": "villahunter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "serve": "python -m http.server 8000"
+    "check": "node --check src/app.js && node --check src/core.js && node --check src/search-model.js && node --check api/search.js && node --check api/health.js",
+    "serve": "python -m http.server 8000",
+    "dev": "vercel dev"
   },
   "engines": {
     "node": ">=20"
