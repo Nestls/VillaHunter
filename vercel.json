@@ -1,6 +1,12 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/search",
+      "destination": "/api/search-v2"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
