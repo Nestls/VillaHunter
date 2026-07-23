@@ -3,84 +3,222 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#16211d">
-  <title>VillaHunter</title>
+  <meta name="theme-color" content="#13221b">
+  <meta name="description" content="VillaHunter recherche et compare des locations de vacances selon des critères stricts ou flexibles.">
+  <title>VillaHunter — moteur de recherche de locations</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="hero">
-    <div>
-      <p class="eyebrow">Recherche de locations sans faux positifs</p>
+    <div class="hero-copy">
+      <p class="eyebrow">Recherche multi-sources de locations</p>
       <h1>VillaHunter</h1>
-      <p>Centralise tes liens, impose les dates exactes et classe les logements à vérifier.</p>
+      <p>Décris précisément ton séjour. VillaHunter découvre les agences locales, les hébergements directs et prépare les recherches des grandes plateformes.</p>
     </div>
-    <button id="exportButton" class="secondary">Exporter le projet</button>
+    <div class="hero-actions">
+      <span id="apiStatus" class="status-pill neutral">Moteur à vérifier</span>
+      <button id="exportButton" class="button secondary" type="button">Exporter</button>
+    </div>
   </header>
 
   <main>
-    <section class="panel criteria">
-      <h2>1. Critères stricts</h2>
-      <div class="grid">
-        <label>Arrivée<input id="checkin" type="date"></label>
-        <label>Départ<input id="checkout" type="date"></label>
-        <label>Adultes<input id="adults" type="number" min="1" value="4"></label>
-        <label>Enfants<input id="children" type="number" min="0" value="2"></label>
-        <label>Bébés<input id="infants" type="number" min="0" value="1"></label>
-        <label>Budget total (€)<input id="budget" type="number" min="0" placeholder="Optionnel"></label>
+    <section id="hostingNotice" class="panel notice" hidden>
+      <div>
+        <strong>Interface en ligne, moteur automatique non connecté</strong>
+        <p>GitHub Pages affiche l’application, mais ne peut pas exécuter le serveur de recherche. Déploie aussi ce dépôt sur Vercel, puis renseigne l’adresse de l’API ci-dessous.</p>
       </div>
-      <p id="tripSummary" class="muted"></p>
+      <button id="openSettingsButton" class="button secondary" type="button">Configurer l’API</button>
     </section>
 
-    <section class="panel">
-      <h2>2. Ajouter les annonces ou recherches</h2>
-      <textarea id="links" rows="7" placeholder="Colle ici les liens Airbnb, Booking, Abritel, Vrbo… un par ligne."></textarea>
-      <div class="actions">
-        <button id="addButton">Ajouter et normaliser</button>
-        <button id="clearButton" class="secondary">Vider</button>
-      </div>
-      <p id="message" role="status"></p>
-    </section>
-
-    <section class="panel">
-      <div class="section-title">
-        <div>
-          <h2>3. Tableau de chasse</h2>
-          <p class="muted">Ouvre chaque lien, contrôle la disponibilité, puis note le résultat.</p>
+    <form id="searchForm">
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">1</span>
+            <h2>Lieu et zone de recherche</h2>
+          </div>
+          <p>Le temps de trajet est vérifié en voiture quand les coordonnées sont disponibles.</p>
         </div>
-        <span id="countBadge" class="badge">0 lien</span>
-      </div>
-      <div id="emptyState" class="empty">Aucun lien pour le moment.</div>
-      <div id="results" class="cards"></div>
+        <div class="form-grid location-grid">
+          <label class="field wide">
+            <span>Lieu de référence</span>
+            <input id="place" name="place" type="text" autocomplete="street-address" placeholder="Ex. 49 bis route d’Auribeau, Grasse" required>
+          </label>
+          <label class="field">
+            <span>Temps de trajet maximum</span>
+            <div class="input-suffix"><input id="maxTravelMinutes" name="maxTravelMinutes" type="number" min="5" max="180" step="5" value="30"><span>min</span></div>
+          </label>
+          <label class="field">
+            <span>Mode de trajet</span>
+            <select id="travelMode" name="travelMode">
+              <option value="driving">Voiture</option>
+              <option value="cycling" disabled>Vélo — bientôt</option>
+              <option value="walking" disabled>À pied — bientôt</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">2</span>
+            <h2>Dates</h2>
+          </div>
+          <div class="segmented" role="group" aria-label="Type de dates">
+            <button class="segment active" type="button" data-date-mode="exact">Dates exactes</button>
+            <button class="segment" type="button" data-date-mode="flexible">Dates flexibles</button>
+          </div>
+        </div>
+
+        <input id="dateMode" name="dateMode" type="hidden" value="exact">
+        <div id="exactDates" class="form-grid">
+          <label class="field"><span>Arrivée</span><input id="checkin" name="checkin" type="date"></label>
+          <label class="field"><span>Départ</span><input id="checkout" name="checkout" type="date"></label>
+          <div class="summary-card"><strong id="exactDateSummary">Dates à renseigner</strong><span>Les liens de plateforme seront nettoyés de toute recherche flexible.</span></div>
+        </div>
+
+        <div id="flexibleDates" class="form-grid" hidden>
+          <label class="field"><span>Début de période</span><input id="flexibleStart" name="flexibleStart" type="date"></label>
+          <label class="field"><span>Fin de période</span><input id="flexibleEnd" name="flexibleEnd" type="date"></label>
+          <label class="field"><span>Durée du séjour</span><div class="input-suffix"><input id="stayNights" name="stayNights" type="number" min="1" max="30" value="7"><span>nuits</span></div></label>
+          <label class="field"><span>Décalage entre essais</span><div class="input-suffix"><input id="flexibilityDays" name="flexibilityDays" type="number" min="1" max="14" value="3"><span>jours</span></div></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">3</span>
+            <h2>Voyageurs et logement</h2>
+          </div>
+          <p>Les bébés et animaux sont séparés pour éviter les faux résultats.</p>
+        </div>
+        <div class="counter-grid">
+          <label class="counter"><span>Adultes</span><input id="adults" name="adults" type="number" min="1" max="30" value="2"></label>
+          <label class="counter"><span>Enfants</span><input id="children" name="children" type="number" min="0" max="20" value="0"></label>
+          <label class="counter"><span>Bébés</span><input id="infants" name="infants" type="number" min="0" max="10" value="0"></label>
+          <label class="counter"><span>Animaux</span><input id="pets" name="pets" type="number" min="0" max="10" value="0"></label>
+          <label class="counter"><span>Chambres min.</span><input id="bedrooms" name="bedrooms" type="number" min="0" max="20" value="1"></label>
+          <label class="counter"><span>Lits min.</span><input id="beds" name="beds" type="number" min="0" max="30" value="1"></label>
+          <label class="counter"><span>Salles de bain min.</span><input id="bathrooms" name="bathrooms" type="number" min="0" max="20" value="1"></label>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend>Types de logement</legend>
+          <div id="propertyTypeChoices" class="chip-grid"></div>
+        </fieldset>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">4</span>
+            <h2>Budget et équipements</h2>
+          </div>
+          <p>Les équipements non confirmés font baisser le score plutôt que d’être inventés.</p>
+        </div>
+        <div class="form-grid budget-grid">
+          <label class="field"><span>Budget minimum total</span><div class="input-suffix"><input id="minBudget" name="minBudget" type="number" min="0" step="50" placeholder="Optionnel"><span>€</span></div></label>
+          <label class="field"><span>Budget maximum total</span><div class="input-suffix"><input id="maxBudget" name="maxBudget" type="number" min="0" step="50" placeholder="Ex. 3000"><span>€</span></div></label>
+          <label class="field"><span>Trier les résultats</span><select id="sortBy" name="sortBy"><option value="score">Meilleure correspondance</option><option value="price">Prix croissant</option><option value="travel">Temps de trajet</option></select></label>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend>Équipements souhaités</legend>
+          <div id="amenityChoices" class="chip-grid"></div>
+        </fieldset>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">5</span>
+            <h2>Critères spéciaux</h2>
+          </div>
+          <p>Utile pour des exigences difficiles à filtrer sur les plateformes, comme l’absence de voisins proches.</p>
+        </div>
+        <div id="specialChoices" class="chip-grid"></div>
+        <label class="field full-width">
+          <span>Précisions libres</span>
+          <textarea id="specialNotes" name="specialNotes" rows="4" placeholder="Ex. maison sans vis-à-vis, pas dans un lotissement, terrain sûr pour les enfants, piscine non partagée, route peu passante…"></textarea>
+        </label>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="step">6</span>
+            <h2>Sources à explorer</h2>
+          </div>
+          <p>Les agences locales et sites directs sont analysés automatiquement quand leurs pages publiques sont accessibles.</p>
+        </div>
+        <div id="sourceChoices" class="chip-grid"></div>
+      </section>
+
+      <section class="search-bar panel">
+        <div>
+          <strong id="searchSummary">Renseigne le lieu et les dates.</strong>
+          <span id="searchHint">La recherche peut prendre quelques secondes selon les sites locaux.</span>
+        </div>
+        <button id="searchButton" class="button primary large" type="submit">Lancer la recherche automatique</button>
+      </section>
+    </form>
+
+    <section id="progressPanel" class="panel progress-panel" hidden aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div><strong id="progressTitle">Recherche en cours…</strong><p id="progressText">Géolocalisation du lieu et découverte des sources locales.</p></div>
     </section>
 
-    <section class="panel note">
-      <h2>Limite importante</h2>
-      <p>VillaHunter ne contourne ni connexion, ni CAPTCHA, ni protection anti-bot. Une mention « disponible » n’est considérée comme fiable qu’après vérification sur la plateforme avec les dates affichées.</p>
+    <section id="resultsSection" class="panel results-section" hidden>
+      <div class="section-heading results-heading">
+        <div>
+          <span class="step">7</span>
+          <h2>Résultats</h2>
+          <p id="resultMeta"></p>
+        </div>
+        <div class="result-actions">
+          <button id="showFavoritesButton" class="button secondary" type="button">Favoris</button>
+          <button id="clearResultsButton" class="button secondary" type="button">Effacer</button>
+        </div>
+      </div>
+      <div id="warnings" class="warnings"></div>
+      <div id="results" class="result-grid"></div>
+    </section>
+
+    <section class="panel methodology">
+      <h2>Ce que fait réellement VillaHunter</h2>
+      <div class="method-grid">
+        <article><strong>Découverte locale</strong><p>Recherche les agences, offices de tourisme et hébergements publics proches du lieu.</p></article>
+        <article><strong>Temps de trajet</strong><p>Calcule le trajet routier quand les coordonnées sont disponibles et écarte les sources trop éloignées.</p></article>
+        <article><strong>Analyse prudente</strong><p>Extrait les équipements, capacités et indices de prix sans déclarer une information non trouvée.</p></article>
+        <article><strong>Respect des protections</strong><p>Ne contourne aucune connexion, CAPTCHA ou protection anti-robot. Les grandes plateformes sont ouvertes avec les bons critères.</p></article>
+      </div>
     </section>
   </main>
 
-  <template id="cardTemplate">
-    <article class="card">
-      <div class="card-top">
-        <span class="platform"></span>
-        <select class="status" aria-label="Statut">
-          <option value="à vérifier">À vérifier</option>
-          <option value="disponible">Disponible</option>
-          <option value="indisponible">Indisponible</option>
-          <option value="hors budget">Hors budget</option>
-          <option value="favori">Favori</option>
-        </select>
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="section-heading"><div><h2>Configuration du moteur</h2><p>Une seule fois après le déploiement du serveur.</p></div><button class="icon-button" value="cancel" aria-label="Fermer">×</button></div>
+      <label class="field"><span>Adresse de l’API VillaHunter</span><input id="apiUrl" type="url" placeholder="https://mon-villahunter.vercel.app/api/search"></label>
+      <p class="help">Laisse vide quand l’interface et l’API sont hébergées ensemble sur Vercel. Sur GitHub Pages, colle l’adresse complète de l’API.</p>
+      <div class="dialog-actions"><button id="saveSettingsButton" class="button primary" value="default" type="button">Enregistrer et tester</button></div>
+    </form>
+  </dialog>
+
+  <template id="resultTemplate">
+    <article class="result-card">
+      <div class="result-card-top">
+        <div><span class="source-badge"></span><span class="confidence-badge"></span></div>
+        <button class="favorite-button" type="button" aria-label="Ajouter aux favoris">♡</button>
       </div>
-      <a class="url" target="_blank" rel="noopener noreferrer"></a>
-      <div class="card-grid">
-        <label>Prix total (€)<input class="price" type="number" min="0"></label>
-        <label>Note<input class="rating" type="number" min="0" max="10" step="0.1"></label>
-      </div>
-      <label>Commentaire<textarea class="notes" rows="2" placeholder="Piscine, distance, conditions, doute sur les dates…"></textarea></label>
-      <div class="actions">
-        <a class="open button-link" target="_blank" rel="noopener noreferrer">Ouvrir avec les dates</a>
-        <button class="remove secondary">Supprimer</button>
-      </div>
+      <div class="score-row"><strong class="score"></strong><div class="score-meter"><span></span></div></div>
+      <h3 class="result-title"></h3>
+      <p class="result-description"></p>
+      <div class="facts"></div>
+      <div class="amenities"></div>
+      <details><summary>Pourquoi ce score ?</summary><div class="score-details"><div class="reasons"></div><div class="result-warnings"></div></div></details>
+      <div class="card-actions"><a class="button primary open-result" target="_blank" rel="noopener noreferrer">Ouvrir la source</a><button class="button secondary copy-result" type="button">Copier</button></div>
     </article>
   </template>
 

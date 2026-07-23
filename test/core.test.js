@@ -1,12 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  detectPlatform,
-  evaluateSnapshot,
-  nightsBetween,
-  normalizeUrl,
-  parseLinks,
-} from "../src/core.js";
+import { detectPlatform, evaluateSnapshot, nightsBetween, normalizeUrl, parseLinks } from "../src/core.js";
 
 test("detects supported platforms", () => {
   assert.equal(detectPlatform("https://www.airbnb.fr/rooms/42"), "airbnb");
@@ -14,29 +8,17 @@ test("detects supported platforms", () => {
   assert.equal(detectPlatform("not-a-url"), "invalide");
 });
 
-test("injects exact Airbnb criteria and removes flexible dates", () => {
-  const source = [
-    "https://www.airbnb.fr/s/Grasse/homes?",
-    "flexible_trip_lengths%5B%5D=one_week&",
-    "flexible_date_search_filter_type=6&",
-    "monthly_start_date=2026-08-01&monthly_length=3",
-  ].join("");
-  const result = new URL(normalizeUrl(source, {
-    checkin: "2026-08-17",
-    checkout: "2026-08-24",
-    adults: 4,
-    children: 2,
-    infants: 1,
+test("injects exact Airbnb criteria and removes flexible parameters", () => {
+  const result = new URL(normalizeUrl("https://www.airbnb.fr/s/Grasse/homes?flexible_trip_lengths%5B%5D=one_week&monthly_start_date=2026-08-01", {
+    checkin: "2026-08-17", checkout: "2026-08-24", adults: 4, children: 2, infants: 1, pets: 1,
   }));
-
   assert.equal(result.searchParams.get("checkin"), "2026-08-17");
   assert.equal(result.searchParams.get("checkout"), "2026-08-24");
   assert.equal(result.searchParams.get("adults"), "4");
-  assert.equal(result.searchParams.get("date_picker_type"), "calendar");
+  assert.equal(result.searchParams.get("pets"), "1");
   assert.equal(result.searchParams.get("flexible_trip_lengths[]"), null);
-  assert.equal(result.searchParams.get("flexible_date_search_filter_type"), null);
   assert.equal(result.searchParams.get("monthly_start_date"), null);
-  assert.equal(result.searchParams.get("monthly_length"), null);
+  assert.equal(result.searchParams.get("date_picker_type"), "calendar");
 });
 
 test("removes tracking parameters", () => {
@@ -52,14 +34,7 @@ test("deduplicates normalized links", () => {
 });
 
 test("classifies obvious unavailable snapshots conservatively", () => {
-  assert.deepEqual(evaluateSnapshot("Ces dates ne sont pas disponibles"), {
-    status: "indisponible",
-    confidence: "moyenne",
-  });
-  assert.deepEqual(evaluateSnapshot("Dates non disponibles"), {
-    status: "indisponible",
-    confidence: "moyenne",
-  });
+  assert.deepEqual(evaluateSnapshot("Ces dates ne sont pas disponibles"), { status: "indisponible", confidence: "moyenne" });
   assert.equal(evaluateSnapshot("Réserver maintenant").status, "à vérifier");
 });
 

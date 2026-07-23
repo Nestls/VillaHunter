@@ -6,11 +6,14 @@ const PLATFORM_RULES = [
   ["leboncoin", /(^|\.)leboncoin\.fr$/i],
 ];
 
-const AIRBNB_FLEXIBLE_DATE_PARAMS = new Set([
+const AIRBNB_FLEXIBLE_KEYS = [
+  "flexible_trip_lengths",
+  "flexible_trip_lengths[]",
+  "flexible_date_search_filter_type",
   "monthly_start_date",
   "monthly_end_date",
   "monthly_length",
-]);
+];
 
 export function detectPlatform(value) {
   try {
@@ -24,72 +27,41 @@ export function detectPlatform(value) {
 export function normalizeUrl(value, criteria = {}) {
   const url = new URL(value.trim());
   url.hash = "";
-
   for (const key of [...url.searchParams.keys()]) {
-    if (/^(utm_|fbclid|gclid|source|ref|referrer)/i.test(key)) {
-      url.searchParams.delete(key);
-    }
+    if (/^(utm_|fbclid|gclid|source|ref|referrer)/i.test(key)) url.searchParams.delete(key);
   }
-
-  const platform = detectPlatform(url.href);
-  if (platform === "airbnb") {
-    removeAirbnbFlexibleDates(url);
+  if (detectPlatform(url.href) === "airbnb") {
+    for (const key of [...url.searchParams.keys()]) {
+      if (AIRBNB_FLEXIBLE_KEYS.includes(key) || key.startsWith("flexible_")) url.searchParams.delete(key);
+    }
     setIfPresent(url, "checkin", criteria.checkin);
     setIfPresent(url, "checkout", criteria.checkout);
     setIfPresent(url, "adults", criteria.adults);
     setIfPresent(url, "children", criteria.children);
     setIfPresent(url, "infants", criteria.infants);
+    setIfPresent(url, "pets", criteria.pets);
     url.searchParams.set("date_picker_type", "calendar");
   }
-
   url.searchParams.sort();
   return url.href;
 }
 
-function removeAirbnbFlexibleDates(url) {
-  for (const key of [...url.searchParams.keys()]) {
-    if (
-      key.toLowerCase().startsWith("flexible_")
-      || AIRBNB_FLEXIBLE_DATE_PARAMS.has(key.toLowerCase())
-    ) {
-      url.searchParams.delete(key);
-    }
-  }
-}
-
-function setIfPresent(url, key, value) {
-  if (value !== undefined && value !== null && value !== "") {
-    url.searchParams.set(key, String(value));
-  }
-}
-
 export function parseLinks(text, criteria = {}) {
-  const candidates = text
-    .split(/[\n,;\s]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
+  const candidates = text.split(/[\n,;\s]+/).map((item) => item.trim()).filter(Boolean);
   const seen = new Set();
   const valid = [];
   const invalid = [];
-
   for (const candidate of candidates) {
     try {
       const normalized = normalizeUrl(candidate, criteria);
       if (!seen.has(normalized)) {
         seen.add(normalized);
-        valid.push({
-          id: cryptoId(normalized),
-          url: normalized,
-          originalUrl: candidate,
-          platform: detectPlatform(normalized),
-        });
+        valid.push({ id: cryptoId(normalized), url: normalized, originalUrl: candidate, platform: detectPlatform(normalized) });
       }
     } catch {
       invalid.push(candidate);
     }
   }
-
   return { valid, invalid };
 }
 
@@ -104,29 +76,10 @@ export function cryptoId(value) {
 
 export function evaluateSnapshot(text) {
   const source = String(text ?? "").toLowerCase();
-  const unavailable = [
-    /indisponible/,
-    /dates?\s+non\s+disponibles?/,
-    /dates?\s+(?:ne\s+)?(?:sont|est)\s+pas\s+disponibles?/,
-    /not available/,
-    /sold out/,
-    /aucun logement/,
-    /no properties/,
-  ];
-  const available = [
-    "réserver",
-    "reserve",
-    "book now",
-    "voir les disponibilités",
-    "show availability",
-  ];
-
-  if (unavailable.some((pattern) => pattern.test(source))) {
-    return { status: "indisponible", confidence: "moyenne" };
-  }
-  if (available.some((signal) => source.includes(signal))) {
-    return { status: "à vérifier", confidence: "faible" };
-  }
+  const unavailable = ["indisponible", "not available", "sold out", "aucun logement", "no properties", "dates non disponibles", "ne sont pas disponibles"];
+  const available = ["réserver", "reserve", "book now", "voir les disponibilités", "show availability"];
+  if (unavailable.some((signal) => source.includes(signal))) return { status: "indisponible", confidence: "moyenne" };
+  if (available.some((signal) => source.includes(signal))) return { status: "à vérifier", confidence: "faible" };
   return { status: "inconnu", confidence: "faible" };
 }
 
@@ -139,13 +92,9 @@ export function nightsBetween(checkin, checkout) {
 }
 
 export function exportProject(project) {
-  return JSON.stringify(
-    {
-      schema: "villahunter-project@1",
-      exportedAt: new Date().toISOString(),
-      ...project,
-    },
-    null,
-    2,
-  );
+  return JSON.stringify({ schema: "villahunter-project@2", exportedAt: new Date().toISOString(), ...project }, null, 2);
+}
+
+function setIfPresent(url, key, value) {
+  if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
 }
