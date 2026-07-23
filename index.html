@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#16211d">
+  <title>VillaHunter</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Recherche de locations sans faux positifs</p>
+      <h1>VillaHunter</h1>
+      <p>Centralise tes liens, impose les dates exactes et classe les logements à vérifier.</p>
+    </div>
+    <button id="exportButton" class="secondary">Exporter le projet</button>
+  </header>
+
+  <main>
+    <section class="panel criteria">
+      <h2>1. Critères stricts</h2>
+      <div class="grid">
+        <label>Arrivée<input id="checkin" type="date"></label>
+        <label>Départ<input id="checkout" type="date"></label>
+        <label>Adultes<input id="adults" type="number" min="1" value="4"></label>
+        <label>Enfants<input id="children" type="number" min="0" value="2"></label>
+        <label>Bébés<input id="infants" type="number" min="0" value="1"></label>
+        <label>Budget total (€)<input id="budget" type="number" min="0" placeholder="Optionnel"></label>
+      </div>
+      <p id="tripSummary" class="muted"></p>
+    </section>
+
+    <section class="panel">
+      <h2>2. Ajouter les annonces ou recherches</h2>
+      <textarea id="links" rows="7" placeholder="Colle ici les liens Airbnb, Booking, Abritel, Vrbo… un par ligne."></textarea>
+      <div class="actions">
+        <button id="addButton">Ajouter et normaliser</button>
+        <button id="clearButton" class="secondary">Vider</button>
+      </div>
+      <p id="message" role="status"></p>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">
+        <div>
+          <h2>3. Tableau de chasse</h2>
+          <p class="muted">Ouvre chaque lien, contrôle la disponibilité, puis note le résultat.</p>
+        </div>
+        <span id="countBadge" class="badge">0 lien</span>
+      </div>
+      <div id="emptyState" class="empty">Aucun lien pour le moment.</div>
+      <div id="results" class="cards"></div>
+    </section>
+
+    <section class="panel note">
+      <h2>Limite importante</h2>
+      <p>VillaHunter ne contourne ni connexion, ni CAPTCHA, ni protection anti-bot. Une mention « disponible » n’est considérée comme fiable qu’après vérification sur la plateforme avec les dates affichées.</p>
+    </section>
+  </main>
+
+  <template id="cardTemplate">
+    <article class="card">
+      <div class="card-top">
+        <span class="platform"></span>
+        <select class="status" aria-label="Statut">
+          <option value="à vérifier">À vérifier</option>
+          <option value="disponible">Disponible</option>
+          <option value="indisponible">Indisponible</option>
+          <option value="hors budget">Hors budget</option>
+          <option value="favori">Favori</option>
+        </select>
+      </div>
+      <a class="url" target="_blank" rel="noopener noreferrer"></a>
+      <div class="card-grid">
+        <label>Prix total (€)<input class="price" type="number" min="0"></label>
+        <label>Note<input class="rating" type="number" min="0" max="10" step="0.1"></label>
+      </div>
+      <label>Commentaire<textarea class="notes" rows="2" placeholder="Piscine, distance, conditions, doute sur les dates…"></textarea></label>
+      <div class="actions">
+        <a class="open button-link" target="_blank" rel="noopener noreferrer">Ouvrir avec les dates</a>
+        <button class="remove secondary">Supprimer</button>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
