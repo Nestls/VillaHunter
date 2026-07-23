@@ -2,7 +2,7 @@ name: VillaHunter CI
 
 on:
   push:
-    branches: [main, agent/initialize-villahunter-mvp]
+    branches: [main, agent/automatic-search-v0.2]
   pull_request:
   workflow_dispatch:
 
@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: 20
       - run: npm test
+      - run: npm run check
 
   deploy:
     if: github.ref == 'refs/heads/main'
