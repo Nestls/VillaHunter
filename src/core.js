@@ -6,6 +6,12 @@ const PLATFORM_RULES = [
   ["leboncoin", /(^|\.)leboncoin\.fr$/i],
 ];
 
+const AIRBNB_FLEXIBLE_DATE_PARAMS = new Set([
+  "monthly_start_date",
+  "monthly_end_date",
+  "monthly_length",
+]);
+
 export function detectPlatform(value) {
   try {
     const host = new URL(value).hostname.replace(/^www\./, "");
@@ -27,6 +33,7 @@ export function normalizeUrl(value, criteria = {}) {
 
   const platform = detectPlatform(url.href);
   if (platform === "airbnb") {
+    removeAirbnbFlexibleDates(url);
     setIfPresent(url, "checkin", criteria.checkin);
     setIfPresent(url, "checkout", criteria.checkout);
     setIfPresent(url, "adults", criteria.adults);
@@ -37,6 +44,17 @@ export function normalizeUrl(value, criteria = {}) {
 
   url.searchParams.sort();
   return url.href;
+}
+
+function removeAirbnbFlexibleDates(url) {
+  for (const key of [...url.searchParams.keys()]) {
+    if (
+      key.toLowerCase().startsWith("flexible_")
+      || AIRBNB_FLEXIBLE_DATE_PARAMS.has(key.toLowerCase())
+    ) {
+      url.searchParams.delete(key);
+    }
+  }
 }
 
 function setIfPresent(url, key, value) {
@@ -87,12 +105,13 @@ export function cryptoId(value) {
 export function evaluateSnapshot(text) {
   const source = String(text ?? "").toLowerCase();
   const unavailable = [
-    "indisponible",
-    "not available",
-    "sold out",
-    "aucun logement",
-    "no properties",
-    "dates non disponibles",
+    /indisponible/,
+    /dates?\s+non\s+disponibles?/,
+    /dates?\s+(?:ne\s+)?(?:sont|est)\s+pas\s+disponibles?/,
+    /not available/,
+    /sold out/,
+    /aucun logement/,
+    /no properties/,
   ];
   const available = [
     "réserver",
@@ -102,7 +121,7 @@ export function evaluateSnapshot(text) {
     "show availability",
   ];
 
-  if (unavailable.some((signal) => source.includes(signal))) {
+  if (unavailable.some((pattern) => pattern.test(source))) {
     return { status: "indisponible", confidence: "moyenne" };
   }
   if (available.some((signal) => source.includes(signal))) {
