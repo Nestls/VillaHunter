@@ -3,10 +3,11 @@ export default function handler(_request, response) {
   response.status(200).json({
     ok: true,
     service: "VillaHunter search API",
-    version: "0.4.0",
+    version: "0.5.0",
     extendedSearch: directListings,
     directListings,
-    resultMode: "verified-listings-only",
+    resultMode: "strict-vacation-rentals",
+    excludes: ["hotels", "guest-houses", "property-sales", "long-term-rentals", "unrequested-apartments"],
     time: new Date().toISOString(),
   });
 }
