@@ -9,11 +9,15 @@ test("routes automatic search through the resilient endpoint", async () => {
   assert.deepEqual(config.rewrites, [
     { source: "/api/search", destination: "/api/search-v2" },
   ]);
+  assert.equal(config.functions["api/search-v2.js"].maxDuration, 60);
 });
 
-test("provides multiple Overpass instances", async () => {
+test("provides multiple Overpass instances and a targeted query", async () => {
   const source = await readFile(new URL("api/search-v2.js", root), "utf8");
   const endpoints = source.match(/https:\/\/[^"\s]+\/api\/interpreter/g) ?? [];
   assert.ok(new Set(endpoints).size >= 3);
-  assert.match(source, /AbortSignal\.timeout\(3_000\)/);
+  assert.match(source, /OVERPASS_TIMEOUT_MS = 8_000/);
+  assert.match(source, /contact:website/);
+  assert.match(source, /out tags center qt 80/);
+  assert.match(source, /Math\.min\(35_000/);
 });
