@@ -21,3 +21,11 @@ test("provides multiple Overpass instances and a targeted query", async () => {
   assert.match(source, /out tags center qt 80/);
   assert.match(source, /Math\.min\(35_000/);
 });
+
+test("excludes hotels and similar collective lodging", async () => {
+  const source = await readFile(new URL("api/search-v2.js", root), "utf8");
+  assert.doesNotMatch(source, /tourism"~"apartment\|chalet\|guest_house\|hotel/);
+  assert.match(source, /EXCLUDED_OSM_TYPES/);
+  assert.match(source, /hotel\|hotelier\|hoteliere\|hostel\|motel\|resort/);
+  assert.match(source, /filterSearchProviderResponse/);
+});
