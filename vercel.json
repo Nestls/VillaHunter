@@ -7,12 +7,15 @@
     },
     "api/search-v2.js": {
       "maxDuration": 60
+    },
+    "api/search-v3.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
     {
       "source": "/api/search",
-      "destination": "/api/search-v2"
+      "destination": "/api/search-v3"
     }
   ],
   "headers": [
