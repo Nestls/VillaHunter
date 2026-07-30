@@ -18,7 +18,7 @@ test("rejects hotels, generic pages and unverified search snippets", async () =>
   assert.match(source, /EXCLUDED_LODGING/);
   assert.match(source, /GENERIC_PAGE/);
   assert.match(source, /VERIFIED_CONFIDENCE\.has\(item\.confidence\)/);
-  assert.match(source, /item\.listing/);
+  assert.match(source, /item\?\.listing/);
   assert.match(source, /hasPropertyEvidence/);
 });
 
