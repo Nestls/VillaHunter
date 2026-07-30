@@ -1,11 +1,11 @@
 {
   "name": "villahunter",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/app.js && node --check src/core.js && node --check src/search-model.js && node --check src/listing-classifier.js && node --check api/search.js && node --check api/search-v2.js && node --check api/search-v3.js && node --check api/search-v4.js && node --check api/search-v5.js && node --check api/health.js",
+    "check": "node --check src/app.js && node --check src/listing-ui.js && node --check src/core.js && node --check src/search-model.js && node --check src/listing-classifier.js && node --check api/search.js && node --check api/search-v2.js && node --check api/search-v3.js && node --check api/search-v4.js && node --check api/search-v5.js && node --check api/health.js",
     "serve": "python -m http.server 8000",
     "dev": "vercel dev"
   },
