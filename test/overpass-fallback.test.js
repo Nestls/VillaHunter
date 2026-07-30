@@ -4,13 +4,14 @@ import { readFile } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
 
-test("routes automatic search through the direct listing endpoint", async () => {
+test("routes automatic search through the verified listing endpoint", async () => {
   const config = JSON.parse(await readFile(new URL("vercel.json", root), "utf8"));
   assert.deepEqual(config.rewrites, [
-    { source: "/api/search", destination: "/api/search-v3" },
+    { source: "/api/search", destination: "/api/search-v4" },
   ]);
   assert.equal(config.functions["api/search-v2.js"].maxDuration, 60);
   assert.equal(config.functions["api/search-v3.js"].maxDuration, 60);
+  assert.equal(config.functions["api/search-v4.js"].maxDuration, 60);
 });
 
 test("provides multiple Overpass instances and a targeted query", async () => {
