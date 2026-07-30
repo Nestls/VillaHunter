@@ -1,6 +1,14 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "functions": {
+    "api/search.js": {
+      "maxDuration": 60
+    },
+    "api/search-v2.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/api/search",
