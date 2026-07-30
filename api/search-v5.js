@@ -2,6 +2,8 @@ import searchHandler from "./search-v4.js";
 import { classifyVacationRental } from "../src/listing-classifier.js";
 import { normalizeCriteria } from "../src/search-model.js";
 
+const ENGINE_VERSION = "0.6.0";
+
 export default async function handler(request, response) {
   const originalJson = response.json.bind(response);
 
@@ -25,11 +27,13 @@ export default async function handler(request, response) {
         propertyType: classification.propertyType,
         vacationRentalVerified: true,
         classification: classification.reason,
+        engineVersion: ENGINE_VERSION,
       });
     }
 
     return originalJson({
       ...payload,
+      engineVersion: ENGINE_VERSION,
       results: accepted,
       sources: {
         ...(payload.sources ?? {}),
@@ -41,6 +45,7 @@ export default async function handler(request, response) {
         strictVacationRentals: accepted.length,
         rejectedByStrictClassifier: rejectionCounts,
         resultMode: "strict-vacation-rentals",
+        engineVersion: ENGINE_VERSION,
       },
       warnings: strictWarnings(payload.warnings, accepted.length, rejectionCounts),
     });
