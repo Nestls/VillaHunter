@@ -17,7 +17,7 @@ test("rejects hotels, generic pages and unverified search snippets", async () =>
   const source = await readFile(new URL("api/search-v4.js", root), "utf8");
   assert.match(source, /EXCLUDED_LODGING/);
   assert.match(source, /GENERIC_PAGE/);
-  assert.match(source, /search-listing/);
+  assert.match(source, /VERIFIED_CONFIDENCE\.has\(item\.confidence\)/);
   assert.match(source, /item\.listing/);
   assert.match(source, /hasPropertyEvidence/);
 });
